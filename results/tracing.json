@@ -1,0 +1,37 @@
+{
+  "session_id": "ragbench-20261019-130118",
+  "calls_sent": 18,
+  "traces_stored": 18,
+  "observations_per_trace": {
+    "baseline.hybrid": [
+      3,
+      3,
+      3
+    ],
+    "baseline.reranked": [
+      4,
+      4,
+      4
+    ],
+    "langchain.hybrid": [
+      4,
+      4,
+      4
+    ],
+    "langchain.reranked": [
+      5,
+      5,
+      5
+    ],
+    "llamaindex.hybrid": [
+      9,
+      9,
+      9
+    ],
+    "llamaindex.reranked": [
+      10,
+      10,
+      10
+    ]
+  }
+}
