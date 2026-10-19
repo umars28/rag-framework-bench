@@ -1,0 +1,6 @@
+source: https://github.com/kubernetes/website
+commit: 1fc565c2f557823a911f073dc577945230f27dd7
+paths: content/en/docs/tasks content/en/docs/concepts
+licence: CC BY 4.0
+documents: 381
+characters: 3767386
