@@ -56,10 +56,10 @@ class LlamaIndexPipeline:
             for c in chunks
         ]
         index = VectorStoreIndex(nodes, embed_model=embed_model or hf_embedding())
-        dense = index.as_retriever(similarity_top_k=settings.dense_k)
-        lexical = BM25Retriever.from_defaults(nodes=nodes, similarity_top_k=settings.lexical_k)
+        self.dense = index.as_retriever(similarity_top_k=settings.dense_k)
+        self.lexical = BM25Retriever.from_defaults(nodes=nodes, similarity_top_k=settings.lexical_k)
         self.fusion = QueryFusionRetriever(
-            [dense, lexical],
+            [self.dense, self.lexical],
             mode="reciprocal_rerank",
             similarity_top_k=settings.fused_k,
             num_queries=1,

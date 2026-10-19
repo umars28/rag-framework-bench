@@ -86,6 +86,62 @@ def environment(settings: Settings) -> dict:
     }
 
 
+def components(pipeline) -> dict[str, Callable[[str], object]]:
+    if hasattr(pipeline, "bm25"):
+        return {
+            "dense": lambda q: pipeline.dense(q, pipeline.settings.dense_k),
+            "bm25": lambda q: pipeline.lexical(q, pipeline.settings.lexical_k),
+        }
+    if hasattr(pipeline, "fusion"):
+        return {"dense": pipeline.dense.retrieve, "bm25": pipeline.lexical.retrieve}
+    return {"dense": pipeline.dense.invoke, "bm25": pipeline.lexical.invoke}
+
+
+def breakdown(names: Sequence[str], out_dir: Path = RESULTS_DIR) -> dict:
+    docs = load_corpus()
+    queries = load_golden(docs)
+    chunks = chunk_documents(docs)
+    parts = {name: components(builder(name)(chunks)) for name in names}
+    timings: dict[str, dict[str, list[float]]] = {n: {c: [] for c in parts[n]} for n in names}
+    for name in names:
+        for fn in parts[name].values():
+            fn(queries[0].text)
+    for query in queries:
+        for name in names:
+            for component, fn in parts[name].items():
+                start = time.perf_counter()
+                fn(query.text)
+                timings[name][component].append(time.perf_counter() - start)
+    report = {
+        name: {
+            c: {"p50_ms": round(percentile(v, 0.5) * 1000, 1), "p95_ms": round(percentile(v, 0.95) * 1000, 1)}
+            for c, v in comps.items()
+        }
+        for name, comps in timings.items()
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "breakdown.json").write_text(json.dumps(report, indent=2) + "\n")
+    return report
+
+
+def versus_baseline(runs: dict) -> list[str]:
+    if "baseline" not in runs:
+        return []
+    lines = ["| implementation | stage | identical top-10 documents | recall@5 higher | recall@5 lower |",
+             "| --- | --- | --- | --- | --- |"]
+    for name, run in runs.items():
+        if name == "baseline":
+            continue
+        for stage in STAGES:
+            base = {q["id"]: q for q in runs["baseline"][stage]["queries"]}
+            mine = run[stage]["queries"]
+            same = sum(1 for q in mine if q["docs"] == base[q["id"]]["docs"])
+            higher = sum(1 for q in mine if q["recall_at_5"] > base[q["id"]]["recall_at_5"])
+            lower = sum(1 for q in mine if q["recall_at_5"] < base[q["id"]]["recall_at_5"])
+            lines.append(f"| {name} | {stage} | {same}/{len(mine)} | {higher} | {lower} |")
+    return ["", "Per query, against the baseline at the same stage:", "", *lines]
+
+
 def markdown(report: dict) -> str:
     runs, loc, deps = report["runs"], report["lines_of_code"], report["dependencies"]
     header = ["implementation", "stage", *FIELDS, "p50 ms", "p95 ms"]
@@ -104,6 +160,7 @@ def markdown(report: dict) -> str:
             f"| {name} | {run['build_seconds']} | {loc.get(impl, '')} | {d.get('packages', '')} | "
             f"{d.get('install_mb', '')} | {d.get('packages_beyond_baseline', '')} | {d.get('mb_beyond_baseline', '')} |"
         )
+    lines += versus_baseline(runs)
     lines += ["", f"Shared code used by all implementations (chunking, tokeniser, settings): {loc['shared']} lines."]
     return "\n".join(lines) + "\n"
 

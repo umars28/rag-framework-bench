@@ -49,7 +49,8 @@ def test_evaluate_reports_every_stage(chunks, fakes):
             assert summary["p95_ms"] >= summary["p50_ms"] >= 0
             assert len(run[stage]["queries"]) == len(QUERIES)
     table = markdown({"runs": runs, "lines_of_code": code_size(), "dependencies": {}})
-    assert table.count("| reranked |") == len(BUILDERS)
+    assert table.count("| reranked |") == 2 * len(BUILDERS) - 1
+    assert "identical top-10 documents" in table
 
 
 def test_code_size_counts_each_implementation():

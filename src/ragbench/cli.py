@@ -27,6 +27,26 @@ def cmd_eval(args) -> int:
     return 0
 
 
+def cmd_report(args) -> int:
+    import json
+
+    from .evaluate import RESULTS_DIR, markdown
+
+    report = json.loads((RESULTS_DIR / "results.json").read_text())
+    (RESULTS_DIR / "results.md").write_text(markdown(report))
+    print(markdown(report))
+    return 0
+
+
+def cmd_breakdown(args) -> int:
+    import json
+
+    from .evaluate import breakdown
+
+    print(json.dumps(breakdown(args.impl), indent=2))
+    return 0
+
+
 def cmd_search(args) -> int:
     from .corpus import load_corpus
     from .evaluate import builder
@@ -131,6 +151,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--impl", nargs="+", default=list(BUILDERS), choices=list(BUILDERS))
     p.add_argument("--out")
     p.set_defaults(func=cmd_eval)
+
+    sub.add_parser("report", help="rewrite results.md from results.json").set_defaults(func=cmd_report)
+
+    p = sub.add_parser("breakdown", help="time the dense and BM25 retrievers on their own")
+    p.add_argument("--impl", nargs="+", default=["baseline", "langchain", "llamaindex"], choices=list(BUILDERS))
+    p.set_defaults(func=cmd_breakdown)
 
     p = sub.add_parser("search", help="run one query through one implementation")
     p.add_argument("query")

@@ -48,11 +48,11 @@ class LangChainPipeline:
         ]
         store = InMemoryVectorStore(embeddings or hf_embeddings())
         store.add_documents(docs, ids=[c.chunk_id for c in chunks])
-        dense = store.as_retriever(search_kwargs={"k": settings.dense_k})
+        self.dense = store.as_retriever(search_kwargs={"k": settings.dense_k})
         lexical_options = {"preprocess_func": tokenise} if parity else {}
         self.lexical = BM25Retriever.from_documents(docs, k=settings.lexical_k, **lexical_options)
         self.ensemble = EnsembleRetriever(
-            retrievers=[dense, self.lexical],
+            retrievers=[self.dense, self.lexical],
             weights=[0.5, 0.5],
             c=settings.rrf_k,
             id_key="chunk_id" if parity else None,
