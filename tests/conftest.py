@@ -111,7 +111,8 @@ def no_network(monkeypatch):
     real_connect = socket.socket.connect
 
     def guarded(self, address):
-        if self.family in (socket.AF_INET, socket.AF_INET6):
+        host = address[0] if isinstance(address, tuple) else ""
+        if self.family in (socket.AF_INET, socket.AF_INET6) and host not in ("127.0.0.1", "::1"):
             raise OSError(f"network access attempted in tests: {address}")
         return real_connect(self, address)
 

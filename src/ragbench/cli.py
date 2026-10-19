@@ -44,6 +44,59 @@ def cmd_search(args) -> int:
     return 0
 
 
+def cmd_trace(args) -> int:
+    import datetime as dt
+    import json
+    from collections import defaultdict
+
+    from . import tracing
+    from .corpus import load_corpus, load_golden
+    from .evaluate import RESULTS_DIR, builder
+    from .shared import chunk_documents
+
+    print(f"LangSmith tracing: {tracing.langsmith_status()}")
+    client = tracing.langfuse_client()
+    print(f"Langfuse: {'configured' if client else 'not configured (LANGFUSE_PUBLIC_KEY/SECRET_KEY unset)'}")
+    if client and "llamaindex" in args.impl:
+        print(f"LlamaIndex OpenInference instrumentation: {tracing.instrument_llamaindex()}")
+
+    docs = load_corpus()
+    queries = load_golden(docs)[: args.n]
+    chunks = chunk_documents(docs)
+    session = "ragbench-" + dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    sent = 0
+    for name in args.impl:
+        pipeline = builder(name)(chunks)
+        if client:
+            pipeline = tracing.Traced(pipeline, client, session)
+        for query in queries:
+            for stage in ("hybrid", "reranked"):
+                getattr(pipeline, stage)(query.text)
+                sent += 1
+        print(f"  {name}: {len(queries) * 2} traced calls")
+    if client:
+        client.flush()
+    tracing.flush_langsmith()
+    if not client:
+        return 0
+
+    traces = tracing.stored_traces(session, sent)
+    counts = tracing.observation_counts([t["id"] for t in traces])
+    by_name: dict[str, list[int]] = defaultdict(list)
+    for trace in traces:
+        by_name[trace["name"]].append(counts[trace["id"]])
+    summary = {
+        "session_id": session,
+        "calls_sent": sent,
+        "traces_stored": len(traces),
+        "observations_per_trace": {k: sorted(v) for k, v in sorted(by_name.items())},
+    }
+    RESULTS_DIR.mkdir(exist_ok=True)
+    (RESULTS_DIR / "tracing.json").write_text(json.dumps(summary, indent=2) + "\n")
+    print(json.dumps(summary, indent=2))
+    return 0 if len(traces) >= sent else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     from .evaluate import BUILDERS
 
@@ -66,6 +119,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--stage", default="reranked", choices=["hybrid", "reranked"])
     p.add_argument("-k", type=int, default=5)
     p.set_defaults(func=cmd_search)
+
+    p = sub.add_parser("trace", help="send traced queries to Langfuse and/or LangSmith")
+    p.add_argument("--impl", nargs="+", default=["baseline", "langchain", "llamaindex"], choices=list(BUILDERS))
+    p.add_argument("-n", type=int, default=3)
+    p.set_defaults(func=cmd_trace)
 
     args = parser.parse_args(argv)
     return args.func(args)
