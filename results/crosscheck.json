@@ -1,0 +1,36 @@
+{
+  "hybrid": {
+    "runbook_rag": {
+      "recall_at_5": 0.5738,
+      "recall_at_10": 0.6857,
+      "hit_at_5": 0.8429,
+      "mrr": 0.6726,
+      "ndcg_at_5": 0.5534
+    },
+    "ragbench_baseline": {
+      "recall_at_5": 0.5738,
+      "recall_at_10": 0.6857,
+      "hit_at_5": 0.8429,
+      "mrr": 0.6726,
+      "ndcg_at_5": 0.5534
+    },
+    "identical_top10": "70/70"
+  },
+  "reranked": {
+    "runbook_rag": {
+      "recall_at_5": 0.6452,
+      "recall_at_10": 0.7095,
+      "hit_at_5": 0.8714,
+      "mrr": 0.6583,
+      "ndcg_at_5": 0.5739
+    },
+    "ragbench_baseline": {
+      "recall_at_5": 0.6452,
+      "recall_at_10": 0.7095,
+      "hit_at_5": 0.8714,
+      "mrr": 0.6583,
+      "ndcg_at_5": 0.5739
+    },
+    "identical_top10": "70/70"
+  }
+}

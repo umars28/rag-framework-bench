@@ -85,7 +85,7 @@ def _has_comment_or_docstring(path: Path) -> bool:
 
 
 def test_no_comments_or_docstrings_in_python_sources():
-    files = [*(REPO_ROOT / "src").rglob("*.py"), *(REPO_ROOT / "tests").rglob("*.py")]
+    files = [p for d in ("src", "tests", "scripts") for p in (REPO_ROOT / d).rglob("*.py")]
     offenders = [str(f.relative_to(REPO_ROOT)) for f in files if _has_comment_or_docstring(f)]
     assert offenders == []
 
