@@ -44,6 +44,25 @@ def cmd_search(args) -> int:
     return 0
 
 
+def cmd_ask(args) -> int:
+    from .corpus import load_corpus
+    from .evaluate import builder
+    from .generate import answer
+    from .shared import chunk_documents
+
+    chunks = chunk_documents(load_corpus())
+    by_id = {c.chunk_id: c for c in chunks}
+    pipeline = builder(args.impl)(chunks)
+    context = [by_id[i] for i in pipeline.reranked(args.question)[: args.k]]
+    result = answer(args.question, context, **({"model": args.model} if args.model else {}))
+    for i, chunk in enumerate(context, start=1):
+        print(f"[{i}] {chunk.doc_title}" + (f" > {chunk.section}" if chunk.section else ""))
+    print(f"\n{result['answer']}\n")
+    print(f"{result['model']}: {result['prompt_tokens']} prompt tokens, "
+          f"{result['output_tokens']} output tokens, {result['seconds']} s")
+    return 0
+
+
 def cmd_trace(args) -> int:
     import datetime as dt
     import json
@@ -120,7 +139,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("-k", type=int, default=5)
     p.set_defaults(func=cmd_search)
 
-    p = sub.add_parser("trace", help="send traced queries to Langfuse and/or LangSmith")
+    p = sub.add_parser("ask", help="retrieve, then answer with a local Ollama model")
+    p.add_argument("question")
+    p.add_argument("--impl", default="baseline", choices=list(BUILDERS))
+    p.add_argument("-k", type=int, default=5)
+    p.add_argument("--model")
+    p.set_defaults(func=cmd_ask)
+
+    p = sub.add_parser("trace",help="send traced queries to Langfuse and/or LangSmith")
     p.add_argument("--impl", nargs="+", default=["baseline", "langchain", "llamaindex"], choices=list(BUILDERS))
     p.add_argument("-n", type=int, default=3)
     p.set_defaults(func=cmd_trace)

@@ -10,7 +10,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import InMemoryVectorStore
 
-from .shared import EMBEDDING_MODEL, QUERY_PREFIX, RERANK_MODEL, Chunk, Settings, tokenise
+from .shared import EMBEDDING_MODEL, QUERY_PREFIX, RERANK_MODEL, Chunk, Settings, device, tokenise
 
 
 def hf_embeddings(name: str = EMBEDDING_MODEL) -> Embeddings:
@@ -18,6 +18,7 @@ def hf_embeddings(name: str = EMBEDDING_MODEL) -> Embeddings:
 
     return HuggingFaceEmbeddings(
         model_name=name,
+        model_kwargs={"device": device()},
         encode_kwargs={"normalize_embeddings": True, "batch_size": 64},
         query_encode_kwargs={"normalize_embeddings": True, "prompt": QUERY_PREFIX},
     )
@@ -26,7 +27,7 @@ def hf_embeddings(name: str = EMBEDDING_MODEL) -> Embeddings:
 def hf_cross_encoder(name: str = RERANK_MODEL) -> BaseCrossEncoder:
     from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
-    return HuggingFaceCrossEncoder(model_name=name)
+    return HuggingFaceCrossEncoder(model_name=name, model_kwargs={"device": device()})
 
 
 class LangChainPipeline:

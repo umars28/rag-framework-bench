@@ -88,3 +88,12 @@ def test_no_comments_or_docstrings_in_python_sources():
     files = [*(REPO_ROOT / "src").rglob("*.py"), *(REPO_ROOT / "tests").rglob("*.py")]
     offenders = [str(f.relative_to(REPO_ROOT)) for f in files if _has_comment_or_docstring(f)]
     assert offenders == []
+
+
+def test_generation_prompt_numbers_every_excerpt():
+    from ragbench.generate import prompt
+    from ragbench.shared import Chunk
+
+    chunks = [Chunk("a:0", "a", "A", None, "first"), Chunk("b:0", "b", "B", None, "second")]
+    text = prompt("why?", chunks)
+    assert "[1] first" in text and "[2] second" in text and text.endswith("Question: why?\nAnswer:")

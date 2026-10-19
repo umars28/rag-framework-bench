@@ -10,7 +10,7 @@ from llama_index.core.retrievers import QueryFusionRetriever
 from llama_index.core.schema import TextNode
 from llama_index.retrievers.bm25 import BM25Retriever
 
-from .shared import EMBEDDING_MODEL, QUERY_PREFIX, RERANK_MODEL, Chunk, Settings
+from .shared import EMBEDDING_MODEL, QUERY_PREFIX, RERANK_MODEL, Chunk, Settings, device
 
 _KEYS = ["chunk_id", "doc_id"]
 
@@ -24,13 +24,14 @@ def hf_embedding(name: str = EMBEDDING_MODEL) -> BaseEmbedding:
         text_instruction="",
         normalize=True,
         embed_batch_size=64,
+        device=device(),
     )
 
 
 def st_reranker(top_n: int, name: str = RERANK_MODEL) -> BaseNodePostprocessor:
     from llama_index.core.postprocessor import SentenceTransformerRerank
 
-    return SentenceTransformerRerank(model=name, top_n=top_n)
+    return SentenceTransformerRerank(model=name, top_n=top_n, device=device())
 
 
 class LlamaIndexPipeline:

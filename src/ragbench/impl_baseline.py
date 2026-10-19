@@ -4,7 +4,7 @@ from typing import Protocol, Sequence
 
 import numpy as np
 
-from .shared import EMBEDDING_MODEL, QUERY_PREFIX, RERANK_MODEL, Chunk, Settings, tokenise
+from .shared import EMBEDDING_MODEL, QUERY_PREFIX, RERANK_MODEL, Chunk, Settings, device, tokenise
 
 
 class Embedder(Protocol):
@@ -21,7 +21,7 @@ class SentenceEmbedder:
     def __init__(self, name: str = EMBEDDING_MODEL) -> None:
         from sentence_transformers import SentenceTransformer
 
-        self.model = SentenceTransformer(name)
+        self.model = SentenceTransformer(name, device=device())
 
     def _encode(self, texts: Sequence[str]) -> np.ndarray:
         vectors = self.model.encode(
@@ -39,7 +39,7 @@ class SentenceEmbedder:
 def cross_encoder(name: str = RERANK_MODEL) -> Scorer:
     from sentence_transformers import CrossEncoder
 
-    return CrossEncoder(name)
+    return CrossEncoder(name, device=device())
 
 
 def reciprocal_rank_fusion(rankings: Sequence[Sequence[str]], k: int) -> list[str]:

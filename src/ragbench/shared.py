@@ -20,6 +20,16 @@ _CAMEL = re.compile(r"[A-Za-z][a-z0-9]*(?:[A-Z][a-z0-9]*)+")
 _CAMEL_PART = re.compile(r"[A-Z]?[a-z0-9]+")
 
 
+def device() -> str:
+    if os.environ.get("RAGBENCH_DEVICE"):
+        return os.environ["RAGBENCH_DEVICE"]
+    import torch
+
+    if torch.cuda.is_available():
+        return "cuda"
+    return "mps" if torch.backends.mps.is_available() else "cpu"
+
+
 @dataclass(frozen=True)
 class Settings:
     dense_k: int = 50
