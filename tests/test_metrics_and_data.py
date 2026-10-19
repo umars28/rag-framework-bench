@@ -55,7 +55,7 @@ def test_header_chunks_ignore_headings_inside_code_fences():
     doc = Document("d", "Title", "u", "p.md", body)
     chunks = header_chunks(doc)
     assert {c.section for c in chunks} == {"Real"}
-    assert chunks[0].content.startswith("Title — Real")
+    assert chunks[0].content.startswith("Title \u2014 Real")
 
 
 def test_committed_corpus_and_every_label_resolves():

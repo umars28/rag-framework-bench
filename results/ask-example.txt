@@ -1,0 +1,17 @@
+[1] Node-pressure Eviction > Node out of memory behavior
+[2] Pods > Working with Pods
+[3] Node Shutdowns > Configuring graceful node shutdown
+[4] Swap memory management > Evictions
+[5] Node-pressure Eviction > Schedulable resources and eviction policies
+
+When a node runs out of memory and pods are being evicted, it indicates that the node is experiencing memory pressure. The kubelet, which manages the node's resources, has configured eviction thresholds to prevent the node from reaching a critical memory state. If the node's memory usage exceeds these thresholds, the kubelet initiates the eviction of pods to free up memory. 
+
+If the node's memory is exhausted and the kubelet cannot reclaim memory before the node experiences an out-of-memory (OOM) event, the OOM killer is invoked. The OOM killer calculates an `oom_score` for each container based on memory usage and adds the `oom_score_adj` value set by the kubelet, which is influenced by the Quality of Service (QoS) class of the pod. Containers with lower QoS (like `BestEffort`) are more likely to be killed first. 
+
+This process is different from pod eviction, as the OOM killer is not Kubernetes-aware and does not consider QoS, pod priority, or other Kubernetes-specific factors. If a container is OOM killed, the kubelet can restart it based on its `restartPolicy`. 
+
+The eviction behavior can be influenced by the configuration of the kubelet's eviction policies and the node's memory management settings, including swap memory configuration. If swap is enabled, the kubelet's eviction thresholds should be set slightly lower than the `vm.min_free_kbytes` value to allow the node to start swapping before evicting pods. 
+
+Excerpt [1] provides details on how the OOM killer interacts with containers based on their QoS and `oom_score_adj` values. Excerpt [4] explains how swap memory management affects eviction behavior.
+
+qwen3:8b: 1212 prompt tokens, 347 output tokens, 43.83 s

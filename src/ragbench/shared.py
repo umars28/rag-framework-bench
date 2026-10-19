@@ -74,7 +74,7 @@ def header_chunks(doc: Document, size: int = 220, overlap: int = 40) -> list[Chu
     chunks: list[Chunk] = []
     step = max(1, size - overlap)
     for heading, body in _sections(doc.content):
-        label = f"{doc.title} — {heading}" if heading else doc.title
+        label = f"{doc.title} \u2014 {heading}" if heading else doc.title
         words = _WORD.findall(body)
         for start in range(0, len(words), step):
             window = words[start : start + size]

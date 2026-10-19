@@ -27,4 +27,13 @@ Per query, against the baseline at the same stage:
 | llamaindex | hybrid | 0/70 | 11 | 4 |
 | llamaindex | reranked | 8/70 | 2 | 3 |
 
+Per query, reranked against hybrid within each implementation:
+
+| implementation | recall@5 up after rerank | recall@5 down after rerank |
+| --- | --- | --- |
+| baseline | 14 | 6 |
+| langchain | 14 | 6 |
+| langchain-defaults | 16 | 6 |
+| llamaindex | 9 | 10 |
+
 Shared code used by all implementations (chunking, tokeniser, settings): 75 lines.

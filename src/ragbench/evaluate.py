@@ -142,6 +142,17 @@ def versus_baseline(runs: dict) -> list[str]:
     return ["", "Per query, against the baseline at the same stage:", "", *lines]
 
 
+def reranker_effect(runs: dict) -> list[str]:
+    lines = ["| implementation | recall@5 up after rerank | recall@5 down after rerank |", "| --- | --- | --- |"]
+    for name, run in runs.items():
+        before = {q["id"]: q["recall_at_5"] for q in run["hybrid"]["queries"]}
+        after = {q["id"]: q["recall_at_5"] for q in run["reranked"]["queries"]}
+        up = sum(1 for i in before if after[i] > before[i])
+        down = sum(1 for i in before if after[i] < before[i])
+        lines.append(f"| {name} | {up} | {down} |")
+    return ["", "Per query, reranked against hybrid within each implementation:", "", *lines]
+
+
 def markdown(report: dict) -> str:
     runs, loc, deps = report["runs"], report["lines_of_code"], report["dependencies"]
     header = ["implementation", "stage", *FIELDS, "p50 ms", "p95 ms"]
@@ -161,6 +172,7 @@ def markdown(report: dict) -> str:
             f"{d.get('install_mb', '')} | {d.get('packages_beyond_baseline', '')} | {d.get('mb_beyond_baseline', '')} |"
         )
     lines += versus_baseline(runs)
+    lines += reranker_effect(runs)
     lines += ["", f"Shared code used by all implementations (chunking, tokeniser, settings): {loc['shared']} lines."]
     return "\n".join(lines) + "\n"
 
