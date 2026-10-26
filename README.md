@@ -4,6 +4,21 @@ One retrieval task, implemented three times on the same corpus, chunks, embeddin
 
 The no-framework baseline is a port of `runbook-rag` from the llm-platform repository, which deliberately uses no orchestration framework. This repository asks what a framework actually buys over that. It follows the same rule as llm-platform: every number below comes from a command in this repository that you can run.
 
+## At a glance
+
+| | |
+|---|---|
+| **Question** | What does a RAG framework actually buy you over plain code, when everything else is held equal? |
+| **Setup** | The same hybrid retrieval (dense + BM25, reciprocal rank fusion) and the same `bge-reranker-base` cross-encoder, built three times: no framework, LangChain, LlamaIndex. All three use the same 381 Kubernetes docs pages, 4,537 chunks, embedding model and reranker, and are scored on 70 labelled queries. |
+| **LangChain** | Configured for parity, it returns the **same top-10 documents on 70/70 queries**. It saves 7 lines of code and costs 40 extra packages and about 93 ms more at p50 (most of it in `InMemoryVectorStore`). |
+| **LlamaIndex** | Better before reranking (recall@5 **0.631 vs 0.574**), but the gain disappears after the reranker (0.636 vs 0.645). Its BM25 cannot take a custom tokeniser, so exact parity was impossible. |
+| **Where the time goes** | The reranker: p50 jumps from tens of ms to 4.4–5.1 s per query in every implementation. |
+| **Trust in the baseline** | A cross-check script runs the original `runbook-rag` code on the same corpus: identical top-10 on 70/70 queries. |
+| **Observability** | Self-hosted Langfuse: 18 of 18 traces stored and read back through its API. |
+| **Stack** | Python, LangChain, LlamaIndex, rank-bm25, BAAI bge embeddings and reranker, Langfuse, uv, pytest |
+
+The honest conclusion: for this task, neither framework improves retrieval quality once the pipeline is equal. They mainly add dependencies and latency. Every number is in `results/`.
+
 ## Results
 
 `uv run ragbench eval` writes `results/results.json` and `results/results.md`. Macro-averaged over 70 queries, scored at document level exactly as runbook-rag scores them.
